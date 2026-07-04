@@ -56,3 +56,25 @@ export interface Payroll {
   month: string; // "YYYY-MM"
   updatedAt: string;
 }
+
+export interface UserWithProfile extends User {
+  profile: EmployeeProfile | null;
+}
+
+export interface LeaveAction {
+  status: LeaveStatus;
+  comments?: string;
+}
+
+export interface PayrollUpdate {
+  basicSalary: number;
+  allowances: number;
+  deductions: number;
+  netSalary: number;
+  month: string;
+}
+
+export interface ApiError {
+  message: string;
+  statusCode?: number;
+}
