@@ -122,4 +122,4 @@ export class PayrollService {
 
     return this.mapPayroll(record);
   }
-}
+
