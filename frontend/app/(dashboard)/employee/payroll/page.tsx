@@ -43,12 +43,34 @@ export default function EmployeePayrollPage() {
           {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-28 w-full" />)}
         </div>
       ) : latest ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Basic Salary" value={formatCurrency(latest.basicSalary)} icon={DollarSign} subtitle="Base pay" accent="blue" />
-          <StatCard title="Allowances" value={formatCurrency(latest.allowances)} icon={TrendingUp} subtitle="Added benefits" accent="emerald" />
-          <StatCard title="Deductions" value={formatCurrency(latest.deductions)} icon={TrendingDown} subtitle="Tax & others" accent="amber" />
-          <StatCard title="Net Salary" value={formatCurrency(latest.netSalary)} icon={CreditCard} subtitle="Take-home pay" accent="violet" />
-        </div>
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard title="Basic Salary" value={formatCurrency(latest.basicSalary)} icon={DollarSign} subtitle="Base pay" accent="blue" />
+            <StatCard title="Total Allowances" value={formatCurrency(latest.allowances)} icon={TrendingUp} subtitle="HRA + others" accent="emerald" />
+            <StatCard title="Total Deductions" value={formatCurrency(latest.deductions)} icon={TrendingDown} subtitle="PF + tax + others" accent="amber" />
+            <StatCard title="Net Salary" value={formatCurrency(latest.netSalary)} icon={CreditCard} subtitle="Take-home pay" accent="violet" />
+          </div>
+
+          {/* Component breakdown */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <SectionCard title="Earnings Breakdown">
+              <ul className="divide-y text-sm">
+                <BreakdownRow label="Basic Salary" value={latest.basicSalary} />
+                <BreakdownRow label="HRA" value={latest.hra} />
+                <BreakdownRow label="Other Allowances" value={latest.otherAllowances} />
+                <BreakdownRow label="Total Earnings" value={latest.basicSalary + latest.allowances} bold />
+              </ul>
+            </SectionCard>
+            <SectionCard title="Deductions Breakdown">
+              <ul className="divide-y text-sm">
+                <BreakdownRow label="Provident Fund (PF)" value={latest.pf} />
+                <BreakdownRow label="Tax" value={latest.tax} />
+                <BreakdownRow label="Other Deductions" value={latest.otherDeductions} />
+                <BreakdownRow label="Total Deductions" value={latest.deductions} bold />
+              </ul>
+            </SectionCard>
+          </div>
+        </>
       ) : (
         <div className="rounded-xl border border-dashed bg-white p-10 text-center text-sm text-slate-500">
           No payroll record found for {month || "the selected month"}.
@@ -67,21 +89,23 @@ export default function EmployeePayrollPage() {
               <TableRow>
                 <TableHead>Month</TableHead>
                 <TableHead className="text-right">Basic</TableHead>
-                <TableHead className="text-right">Allowances</TableHead>
-                <TableHead className="text-right">Deductions</TableHead>
+                <TableHead className="text-right">HRA</TableHead>
+                <TableHead className="text-right">PF</TableHead>
+                <TableHead className="text-right">Tax</TableHead>
                 <TableHead className="text-right font-semibold">Net</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {payroll.length === 0 && (
-                <TableEmpty colSpan={5}>No payroll records yet.</TableEmpty>
+                <TableEmpty colSpan={6}>No payroll records yet.</TableEmpty>
               )}
               {[...payroll].reverse().map((p) => (
                 <TableRow key={p.id} className={p.month === month ? "bg-blue-50/40" : ""}>
                   <TableCell className="font-medium">{p.month}</TableCell>
                   <TableCell className="text-right">{formatCurrency(p.basicSalary)}</TableCell>
-                  <TableCell className="text-right text-emerald-600">{formatCurrency(p.allowances)}</TableCell>
-                  <TableCell className="text-right text-red-500">{formatCurrency(p.deductions)}</TableCell>
+                  <TableCell className="text-right text-emerald-600">{formatCurrency(p.hra)}</TableCell>
+                  <TableCell className="text-right text-red-500">{formatCurrency(p.pf)}</TableCell>
+                  <TableCell className="text-right text-red-500">{formatCurrency(p.tax)}</TableCell>
                   <TableCell className="text-right font-semibold">{formatCurrency(p.netSalary)}</TableCell>
                 </TableRow>
               ))}
@@ -90,6 +114,15 @@ export default function EmployeePayrollPage() {
         )}
       </SectionCard>
     </div>
+  );
+}
+
+function BreakdownRow({ label, value, bold }: { label: string; value: number; bold?: boolean }) {
+  return (
+    <li className={`flex items-center justify-between py-2 ${bold ? "font-semibold text-slate-900" : "text-slate-600"}`}>
+      <span>{label}</span>
+      <span>{formatCurrency(value)}</span>
+    </li>
   );
 }
 

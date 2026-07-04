@@ -13,20 +13,35 @@ export class UpdatePayrollDto {
   @Min(0)
   basicSalary: number;
 
-  @ApiProperty({ example: 1000 })
+  @ApiProperty({ example: 1500, required: false })
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  allowances: number;
+  hra?: number;
 
-  @ApiProperty({ example: 500 })
+  @ApiProperty({ example: 500, required: false })
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  deductions: number;
+  otherAllowances?: number;
 
-  @ApiProperty({ example: 5500 })
+  @ApiProperty({ example: 600, required: false })
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  netSalary: number;
+  pf?: number;
+
+  @ApiProperty({ example: 400, required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  tax?: number;
+
+  @ApiProperty({ example: 100, required: false })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  otherDeductions?: number;
 
   @ApiProperty({ example: '2026-07' })
   @IsString()

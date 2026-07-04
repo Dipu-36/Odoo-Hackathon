@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { format } from "date-fns";
 import {
   Users,
@@ -11,6 +11,7 @@ import {
   ArrowRight,
   Building2,
   Wallet,
+  Plane,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { SectionCard } from "@/components/dashboard/SectionCard";
@@ -19,6 +20,13 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogClose,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   useAdminStats,
   useApproveLeave,
@@ -29,6 +37,9 @@ import type { UserWithProfile } from "@/types";
 
 export default function AdminDashboardPage() {
   const { counts, employees, leaves, attendance, isLoading } = useAdminStats();
+  const [selectedEmployee, setSelectedEmployee] = useState<UserWithProfile | null>(
+    null
+  );
   const currentMonth = new Date().toISOString().slice(0, 7);
   const { data: payrolls = [], isLoading: payrollLoading } =
     usePayrolls(currentMonth);
@@ -64,6 +75,39 @@ export default function AdminDashboardPage() {
   };
 
   const todayLabel = format(new Date(), "EEEE, MMMM d, yyyy");
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const getEmployeeStatus = (employeeId: string) => {
+    const hasAttendanceToday = attendance.some((a) => a.userId === employeeId);
+    if (hasAttendanceToday) {
+      return {
+        key: "present" as const,
+        label: "Present in office",
+      };
+    }
+
+    const onApprovedLeave = leaves.some((leave) => {
+      if (leave.userId !== employeeId || leave.status !== "APPROVED") return false;
+      const from = new Date(leave.from);
+      const to = new Date(leave.to);
+      from.setHours(0, 0, 0, 0);
+      to.setHours(23, 59, 59, 999);
+      return todayStart >= from && todayStart <= to;
+    });
+
+    if (onApprovedLeave) {
+      return {
+        key: "leave" as const,
+        label: "On leave",
+      };
+    }
+
+    return {
+      key: "absent" as const,
+      label: "Absent",
+    };
+  };
 
   return (
     <div className="space-y-6">
@@ -74,6 +118,82 @@ export default function AdminDashboardPage() {
           payroll.
         </p>
       </div>
+
+      <SectionCard
+        title="Employee Directory"
+        action={
+          <Link href="/admin/employees">
+            <Button variant="ghost" size="sm" className="gap-1">
+              View all <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        }
+      >
+        {isLoading ? (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="h-36 w-full" />
+            ))}
+          </div>
+        ) : employees.length === 0 ? (
+          <p className="py-6 text-center text-sm text-slate-500">No employees found.</p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {employees.slice(0, 12).map((emp) => {
+              const status = getEmployeeStatus(emp.id);
+              return (
+                <button
+                  key={emp.id}
+                  type="button"
+                  onClick={() => setSelectedEmployee(emp)}
+                  className="group rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md"
+                >
+                  <div className="mb-3 flex items-start justify-between">
+                    <Avatar className="h-11 w-11">
+                      {emp.profile?.avatarUrl && <AvatarImage src={emp.profile.avatarUrl} />}
+                      <AvatarFallback>
+                        {initials(emp.profile?.firstName, emp.profile?.lastName)}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <div className="flex items-center gap-1.5 text-xs">
+                      {status.key === "present" && (
+                        <>
+                          <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                          <span className="text-emerald-700">Present</span>
+                        </>
+                      )}
+                      {status.key === "leave" && (
+                        <>
+                          <Plane className="h-3.5 w-3.5 text-blue-600" />
+                          <span className="text-blue-700">Leave</span>
+                        </>
+                      )}
+                      {status.key === "absent" && (
+                        <>
+                          <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                          <span className="text-amber-700">Absent</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <p className="line-clamp-1 font-semibold text-slate-900 group-hover:text-slate-700">
+                    {emp.profile
+                      ? `${emp.profile.firstName} ${emp.profile.lastName}`
+                      : emp.employeeId}
+                  </p>
+                  <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{emp.employeeId}</p>
+                  <p className="mt-2 line-clamp-1 text-xs text-slate-500">
+                    {emp.profile?.department ?? "Unassigned"}
+                    {emp.profile?.designation ? ` · ${emp.profile.designation}` : ""}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </SectionCard>
 
       {isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -464,6 +584,71 @@ export default function AdminDashboardPage() {
           </div>
         </SectionCard>
       </div>
+
+      <Dialog open={!!selectedEmployee} onOpenChange={() => setSelectedEmployee(null)}>
+        {selectedEmployee && (
+          <>
+            <DialogHeader>
+              <DialogTitle>Employee Information</DialogTitle>
+              <DialogDescription>
+                View-only record for {selectedEmployee.profile?.firstName ?? selectedEmployee.email}.
+              </DialogDescription>
+              <DialogClose onClick={() => setSelectedEmployee(null)} />
+            </DialogHeader>
+
+            <div className="space-y-4 text-sm">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-12 w-12">
+                  {selectedEmployee.profile?.avatarUrl && (
+                    <AvatarImage src={selectedEmployee.profile.avatarUrl} />
+                  )}
+                  <AvatarFallback>
+                    {initials(
+                      selectedEmployee.profile?.firstName,
+                      selectedEmployee.profile?.lastName
+                    )}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold text-slate-900">
+                    {selectedEmployee.profile
+                      ? `${selectedEmployee.profile.firstName} ${selectedEmployee.profile.lastName}`
+                      : selectedEmployee.employeeId}
+                  </p>
+                  <p className="text-xs text-slate-500">{selectedEmployee.email}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-slate-500">Employee ID</p>
+                  <p className="font-medium">{selectedEmployee.employeeId}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500">Role</p>
+                  <p className="font-medium">{selectedEmployee.role}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500">Department</p>
+                  <p className="font-medium">{selectedEmployee.profile?.department ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500">Designation</p>
+                  <p className="font-medium">{selectedEmployee.profile?.designation ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500">Phone</p>
+                  <p className="font-medium">{selectedEmployee.profile?.phone ?? "—"}</p>
+                </div>
+                <div>
+                  <p className="text-slate-500">Joined</p>
+                  <p className="font-medium">{formatDate(selectedEmployee.createdAt)}</p>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </Dialog>
     </div>
   );
 }

@@ -50,7 +50,12 @@ export interface Payroll {
   id: string;
   userId: string;
   basicSalary: number;
+  hra: number;
+  otherAllowances: number;
   allowances: number;
+  pf: number;
+  tax: number;
+  otherDeductions: number;
   deductions: number;
   netSalary: number;
   month: string; // "YYYY-MM"
@@ -68,9 +73,11 @@ export interface LeaveAction {
 
 export interface PayrollUpdate {
   basicSalary: number;
-  allowances: number;
-  deductions: number;
-  netSalary: number;
+  hra?: number;
+  otherAllowances?: number;
+  pf?: number;
+  tax?: number;
+  otherDeductions?: number;
   month: string;
 }
 

@@ -96,17 +96,22 @@ model LeaveRequest {
 }
 
 model Payroll {
-  id          String   @id @default(uuid())
-  userId      String
-  month       String   // format: "YYYY-MM"
-  basicSalary Decimal  @db.Decimal(12, 2)
-  allowances  Decimal  @db.Decimal(12, 2) @default(0)
-  deductions  Decimal  @db.Decimal(12, 2) @default(0)
-  netSalary   Decimal  @db.Decimal(12, 2)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(uuid())
+  userId          String
+  month           String   // format: "YYYY-MM"
+  basicSalary     Decimal  @db.Decimal(12, 2)
+  hra             Decimal  @db.Decimal(12, 2) @default(0)
+  otherAllowances Decimal  @db.Decimal(12, 2) @default(0)
+  allowances      Decimal  @db.Decimal(12, 2) @default(0) // hra + otherAllowances
+  pf              Decimal  @db.Decimal(12, 2) @default(0)
+  tax             Decimal  @db.Decimal(12, 2) @default(0)
+  otherDeductions Decimal  @db.Decimal(12, 2) @default(0)
+  deductions      Decimal  @db.Decimal(12, 2) @default(0) // pf + tax + otherDeductions
+  netSalary       Decimal  @db.Decimal(12, 2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, month])
   @@map("payroll")
