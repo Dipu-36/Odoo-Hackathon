@@ -121,8 +121,10 @@ function NavContent({
     <div className="flex flex-1 flex-col justify-between p-4">
       <nav className="space-y-1">
         {nav.map((item) => {
-          const active =
-            item.href === pathname || pathname.startsWith(`${item.href}/`);
+          const isDashboard = item.href === "/admin" || item.href === "/employee";
+          const active = isDashboard
+            ? pathname === item.href
+            : pathname === item.href || pathname.startsWith(`${item.href}/`);
           return (
             <Link
               key={item.href}
