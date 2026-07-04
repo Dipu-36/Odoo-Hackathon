@@ -7,7 +7,12 @@ export interface MyProfileResponse {
 }
 
 export type UpdateProfileData = Partial<
-  Pick<EmployeeProfile, "phone" | "department" | "designation" | "avatarUrl">
+  Pick<
+    EmployeeProfile,
+    | "firstName" | "lastName" | "phone" | "department" | "designation" | "avatarUrl"
+    | "dateOfBirth" | "nationality" | "gender" | "maritalStatus" | "personalEmail" | "address"
+    | "accountNumber" | "bankName" | "ifscCode" | "panNumber" | "uanNumber"
+  >
 >;
 
 export const getMyProfile = () =>

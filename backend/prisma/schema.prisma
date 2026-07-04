@@ -51,18 +51,29 @@ model User {
 }
 
 model EmployeeProfile {
-  id          String   @id @default(uuid())
-  userId      String   @unique
-  firstName   String
-  lastName    String
-  phone       String?
-  department  String?
-  designation String?
-  avatarUrl   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  firstName      String
+  lastName       String
+  phone          String?
+  department     String?
+  designation    String?
+  avatarUrl      String?
+  dateOfBirth    DateTime?
+  nationality    String?
+  gender         String?
+  maritalStatus  String?
+  personalEmail  String?
+  address        String?
+  accountNumber  String?
+  bankName       String?
+  ifscCode       String?
+  panNumber      String?
+  uanNumber      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("employee_profiles")
 }

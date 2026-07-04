@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { UserCircle, Shield, Landmark, Building2, Camera, Loader2 } from "lucide-react";
@@ -20,14 +20,37 @@ import {
 import { useMyPayroll, useMyProfile, useUpdateProfile, useUploadAvatar } from "@/lib/hooks/useEmployee";
 import { formatCurrency, initials, avatarUrl } from "@/lib/format";
 
-const schema = z.object({
+// ─── Schemas ──────────────────────────────────────────────────────────────────
+
+const resumeSchema = z.object({
   firstName: z.string().min(1, "Required"),
   lastName: z.string().min(1, "Required"),
   phone: z.string().optional(),
   department: z.string().optional(),
   designation: z.string().optional(),
 });
-type FormValues = z.infer<typeof schema>;
+type ResumeValues = z.infer<typeof resumeSchema>;
+
+const privateSchema = z.object({
+  dateOfBirth: z.string().optional(),
+  nationality: z.string().optional(),
+  gender: z.string().optional(),
+  maritalStatus: z.string().optional(),
+  personalEmail: z.string().email("Invalid email").optional().or(z.literal("")),
+  address: z.string().optional(),
+});
+type PrivateValues = z.infer<typeof privateSchema>;
+
+const securitySchema = z.object({
+  accountNumber: z.string().optional(),
+  bankName: z.string().optional(),
+  ifscCode: z.string().optional(),
+  panNumber: z.string().optional(),
+  uanNumber: z.string().optional(),
+});
+type SecurityValues = z.infer<typeof securitySchema>;
+
+// ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function EmployeeProfilePage() {
   const { data, isLoading } = useMyProfile();
@@ -35,6 +58,7 @@ export default function EmployeeProfilePage() {
   const { mutateAsync: uploadAvatar, isPending: uploading, error: uploadError } = useUploadAvatar();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarSrc, setAvatarSrc] = useState<string | undefined>();
+  const [savedTab, setSavedTab] = useState<string | null>(null);
   const currentMonth = new Date().toISOString().slice(0, 7);
   const { data: payroll = [], isLoading: payrollLoading } = useMyPayroll(currentMonth);
   const profile = data?.profile;
@@ -42,24 +66,47 @@ export default function EmployeeProfilePage() {
   const latestPayroll = payroll[payroll.length - 1];
   const showSalaryTab = user?.role === "ADMIN" || user?.role === "HR";
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-  });
+  const resumeForm = useForm<ResumeValues>({ resolver: zodResolver(resumeSchema) });
+  const privateForm = useForm<PrivateValues>({ resolver: zodResolver(privateSchema) });
+  const securityForm = useForm<SecurityValues>({ resolver: zodResolver(securitySchema) });
 
   useEffect(() => {
     if (profile) {
-      reset({
+      resumeForm.reset({
         firstName: profile.firstName,
         lastName: profile.lastName,
         phone: profile.phone ?? "",
         department: profile.department ?? "",
         designation: profile.designation ?? "",
       });
+      privateForm.reset({
+        dateOfBirth: profile.dateOfBirth ? profile.dateOfBirth.split("T")[0] : "",
+        nationality: profile.nationality ?? "",
+        gender: profile.gender ?? "",
+        maritalStatus: profile.maritalStatus ?? "",
+        personalEmail: profile.personalEmail ?? "",
+        address: profile.address ?? "",
+      });
+      securityForm.reset({
+        accountNumber: profile.accountNumber ?? "",
+        bankName: profile.bankName ?? "",
+        ifscCode: profile.ifscCode ?? "",
+        panNumber: profile.panNumber ?? "",
+        uanNumber: profile.uanNumber ?? "",
+      });
       setAvatarSrc(avatarUrl(profile.avatarUrl));
     }
-  }, [profile, reset]);
+  }, [profile, resumeForm, privateForm, securityForm]);
 
-  const onSubmit = (values: FormValues) => mutate(values);
+  const onResumeSubmit = (values: ResumeValues) => {
+    mutate(values, { onSuccess: () => setSavedTab("resume") });
+  };
+  const onPrivateSubmit = (values: PrivateValues) => {
+    mutate(values, { onSuccess: () => setSavedTab("private") });
+  };
+  const onSecuritySubmit = (values: SecurityValues) => {
+    mutate(values, { onSuccess: () => setSavedTab("security") });
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -67,21 +114,40 @@ export default function EmployeeProfilePage() {
     try {
       await uploadAvatar(file);
       const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
-      const url = URL.createObjectURL(file);
       setAvatarSrc(`${baseUrl}/uploads/avatars/${file.name}`);
-      URL.revokeObjectURL(url);
     } catch {
       // error handled by uploadError state
     }
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const field = (id: keyof FormValues, label: string, placeholder = "") => (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const field = (form: any, id: string, label: string, placeholder = "") => (
     <div className="space-y-1">
       <Label htmlFor={id}>{label}</Label>
-      <Input id={id} placeholder={placeholder} {...register(id)} />
-      {errors[id] && <p className="text-xs text-red-500">{errors[id]?.message}</p>}
+      <Input id={id} placeholder={placeholder} {...form.register(id)} />
+      {form.formState.errors[id] && (
+        <p className="text-xs text-red-500">{form.formState.errors[id]?.message as string}</p>
+      )}
     </div>
+  );
+
+  const SaveButton = ({ tab }: { tab: string }) => (
+    <>
+      {error && (
+        <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-600">
+          Failed to update profile. Please try again.
+        </p>
+      )}
+      {isSuccess && savedTab === tab && (
+        <p className="rounded bg-green-50 px-3 py-2 text-sm text-green-700">
+          Profile updated successfully.
+        </p>
+      )}
+      <Button type="submit" disabled={isPending}>
+        {isPending ? "Saving…" : "Save Changes"}
+      </Button>
+    </>
   );
 
   return (
@@ -179,6 +245,7 @@ export default function EmployeeProfilePage() {
           <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
 
+        {/* ─── Resume Tab ─────────────────────────────────────────────── */}
         <TabsContent value="resume">
           <SectionCard title="Resume / Basic Information">
             {isLoading ? (
@@ -188,50 +255,50 @@ export default function EmployeeProfilePage() {
                 ))}
               </div>
             ) : (
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <form onSubmit={resumeForm.handleSubmit(onResumeSubmit)} className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {field("firstName", "First Name", "John")}
-                  {field("lastName", "Last Name", "Doe")}
+                  {field(resumeForm, "firstName", "First Name", "John")}
+                  {field(resumeForm, "lastName", "Last Name", "Doe")}
                 </div>
-                {field("phone", "Phone", "+1 234 567 890")}
-                {field("department", "Department", "Engineering")}
-                {field("designation", "Designation", "Software Engineer")}
-
-                {error && (
-                  <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-600">
-                    Failed to update profile. Please try again.
-                  </p>
-                )}
-                {isSuccess && (
-                  <p className="rounded bg-green-50 px-3 py-2 text-sm text-green-700">
-                    Profile updated successfully.
-                  </p>
-                )}
-
-                <Button type="submit" disabled={isPending}>
-                  {isPending ? "Saving…" : "Save Changes"}
-                </Button>
+                {field(resumeForm, "phone", "Phone", "+1 234 567 890")}
+                {field(resumeForm, "department", "Department", "Engineering")}
+                {field(resumeForm, "designation", "Designation", "Software Engineer")}
+                <div className="space-y-2">
+                  <SaveButton tab="resume" />
+                </div>
               </form>
             )}
           </SectionCard>
         </TabsContent>
 
+        {/* ─── Private Info Tab ──────────────────────────────────────── */}
         <TabsContent value="private">
           <SectionCard title="Private Information">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <ReadOnlyInput label="Date of Birth" value="—" />
-              <ReadOnlyInput label="Nationality" value="—" />
-              <ReadOnlyInput label="Gender" value="—" />
-              <ReadOnlyInput label="Marital Status" value="—" />
-              <ReadOnlyInput label="Personal Email" value="—" />
-              <ReadOnlyInput label="Date of Joining" value={user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"} />
-              <div className="sm:col-span-2">
-                <ReadOnlyInput label="Residing Address" value="—" />
+            {isLoading ? (
+              <div className="space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-9 w-full" />
+                ))}
               </div>
-            </div>
+            ) : (
+              <form onSubmit={privateForm.handleSubmit(onPrivateSubmit)} className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {field(privateForm, "dateOfBirth", "Date of Birth", "1995-08-15")}
+                  {field(privateForm, "nationality", "Nationality", "American")}
+                  {field(privateForm, "gender", "Gender", "Male / Female / Other")}
+                  {field(privateForm, "maritalStatus", "Marital Status", "Single / Married")}
+                  {field(privateForm, "personalEmail", "Personal Email", "john.personal@gmail.com")}
+                </div>
+                {field(privateForm, "address", "Residing Address", "123 Main St, Springfield, IL")}
+                <div className="space-y-2">
+                  <SaveButton tab="private" />
+                </div>
+              </form>
+            )}
           </SectionCard>
         </TabsContent>
 
+        {/* ─── Salary Info Tab (Admin only) ──────────────────────────── */}
         {showSalaryTab && (
           <TabsContent value="salary">
             <SectionCard title="Salary Information (Admin View)">
@@ -255,19 +322,29 @@ export default function EmployeeProfilePage() {
           </TabsContent>
         )}
 
+        {/* ─── Security Tab ──────────────────────────────────────────── */}
         <TabsContent value="security">
-          <SectionCard title="Security">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <ReadOnlyInput label="Account Number" value="—" />
-              <ReadOnlyInput label="Bank Name" value="—" />
-              <ReadOnlyInput label="IFSC Code" value="—" />
-              <ReadOnlyInput label="PAN Number" value="—" />
-              <ReadOnlyInput label="UAN Number" value="—" />
-              <ReadOnlyInput label="Employee Code" value={user?.employeeId ?? "—"} />
-            </div>
-            <p className="mt-3 text-xs text-slate-500">
-              Sensitive fields are shown in read-only mode in this phase.
-            </p>
+          <SectionCard title="Security & Bank Details">
+            {isLoading ? (
+              <div className="space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-9 w-full" />
+                ))}
+              </div>
+            ) : (
+              <form onSubmit={securityForm.handleSubmit(onSecuritySubmit)} className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {field(securityForm, "accountNumber", "Account Number", "1234567890")}
+                  {field(securityForm, "bankName", "Bank Name", "Chase Bank")}
+                  {field(securityForm, "ifscCode", "IFSC Code", "CHASUS33")}
+                  {field(securityForm, "panNumber", "PAN Number", "ABCDE1234F")}
+                  {field(securityForm, "uanNumber", "UAN Number", "101234567890")}
+                </div>
+                <div className="space-y-2">
+                  <SaveButton tab="security" />
+                </div>
+              </form>
+            )}
           </SectionCard>
         </TabsContent>
       </Tabs>
@@ -303,4 +380,3 @@ function ReadOnlyInput({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-

@@ -20,6 +20,17 @@ export interface EmployeeProfile {
   department?: string;
   designation?: string;
   avatarUrl?: string;
+  dateOfBirth?: string;
+  nationality?: string;
+  gender?: string;
+  maritalStatus?: string;
+  personalEmail?: string;
+  address?: string;
+  accountNumber?: string;
+  bankName?: string;
+  ifscCode?: string;
+  panNumber?: string;
+  uanNumber?: string;
   createdAt: string;
   updatedAt: string;
 }

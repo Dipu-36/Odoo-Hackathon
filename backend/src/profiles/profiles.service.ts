@@ -31,9 +31,13 @@ export class ProfilesService {
     });
 
     if (existing) {
+      const data: Record<string, unknown> = { ...dto };
+      if (dto.dateOfBirth !== undefined) {
+        data.dateOfBirth = dto.dateOfBirth ? new Date(dto.dateOfBirth) : null;
+      }
       const profile = await this.prisma.employeeProfile.update({
         where: { userId },
-        data: dto,
+        data: data as any,
       });
       return { profile };
     }
@@ -47,6 +51,17 @@ export class ProfilesService {
         department: dto.department,
         designation: dto.designation,
         avatarUrl: dto.avatarUrl,
+        dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
+        nationality: dto.nationality,
+        gender: dto.gender,
+        maritalStatus: dto.maritalStatus,
+        personalEmail: dto.personalEmail,
+        address: dto.address,
+        accountNumber: dto.accountNumber,
+        bankName: dto.bankName,
+        ifscCode: dto.ifscCode,
+        panNumber: dto.panNumber,
+        uanNumber: dto.uanNumber,
       },
     });
 
