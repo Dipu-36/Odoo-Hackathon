@@ -1,5 +1,6 @@
-// TODO: Implement Sign Up page
-// POST /auth/register → Employee ID, Email, Password, Role
+import { SignupForm } from "@/components/auth/signup-form";
+
 export default function SignUpPage() {
-  return <div>Sign Up Page</div>;
+  return <SignupForm />;
 }
+
