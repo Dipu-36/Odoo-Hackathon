@@ -1,6 +1,6 @@
 // Shared TypeScript types aligned with the PostgreSQL schema
 
-export type Role = "ADMIN" | "HR" | "EMPLOYEE";
+export type Role = "ADMIN" | "HR" | "EMPLOYEE"; // HR is treated identically to ADMIN
 
 export interface User {
   id: string;

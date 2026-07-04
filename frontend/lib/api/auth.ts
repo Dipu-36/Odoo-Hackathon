@@ -11,7 +11,7 @@ export interface RegisterData {
   employeeId: string;
   email: string;
   password: string;
-  role: "ADMIN" | "HR" | "EMPLOYEE";
+  role: "ADMIN" | "EMPLOYEE";
 }
 
 export interface LoginResponse {

@@ -14,7 +14,8 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.0",
@@ -38,6 +39,9 @@
     "tar": "^7.5.19",
     "multer": "2.2.0"
   },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
     "@nestjs/testing": "^11.0.0",
@@ -47,6 +51,7 @@
     "@types/passport-jwt": "^3.0.0",
     "@types/passport-local": "^1.0.38",
     "prisma": "^5.0.0",
+    "tsx": "^4.19.2",
     "typescript": "^5.1.3"
   }
 }
