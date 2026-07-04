@@ -29,7 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { initials, formatDate } from "@/lib/format";
+import { initials, formatDate, avatarUrl } from "@/lib/format";
 import type { UserWithProfile } from "@/types";
 
 const createSchema = z.object({
@@ -126,7 +126,7 @@ export default function AdminEmployeesPage() {
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
                         {emp.profile?.avatarUrl && (
-                          <AvatarImage src={emp.profile.avatarUrl} />
+                          <AvatarImage src={avatarUrl(emp.profile.avatarUrl)} />
                         )}
                         <AvatarFallback>
                           {initials(

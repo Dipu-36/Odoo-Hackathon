@@ -15,3 +15,13 @@ export const getMyProfile = () =>
 
 export const updateMyProfile = (data: UpdateProfileData) =>
   api.patch<MyProfileResponse>("/profiles/me", data).then((res) => res.data);
+
+export const uploadAvatar = (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return api
+    .post<{ profile: EmployeeProfile }>("/profiles/me/avatar", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    })
+    .then((res) => res.data);
+};

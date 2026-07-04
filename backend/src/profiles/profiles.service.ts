@@ -52,4 +52,23 @@ export class ProfilesService {
 
     return { profile };
   }
+
+  async updateAvatar(userId: string, avatarUrl: string) {
+    const existing = await this.prisma.employeeProfile.findUnique({
+      where: { userId },
+    });
+
+    if (existing) {
+      const profile = await this.prisma.employeeProfile.update({
+        where: { userId },
+        data: { avatarUrl },
+      });
+      return { profile };
+    }
+
+    const profile = await this.prisma.employeeProfile.create({
+      data: { userId, firstName: '', lastName: '', avatarUrl },
+    });
+    return { profile };
+  }
 }

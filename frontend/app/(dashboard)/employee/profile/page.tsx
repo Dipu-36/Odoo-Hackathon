@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { UserCircle, Shield, Landmark, Building2 } from "lucide-react";
+import { UserCircle, Shield, Landmark, Building2, Camera, Loader2 } from "lucide-react";
 import { SectionCard } from "@/components/dashboard/SectionCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +17,8 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { useMyPayroll, useMyProfile, useUpdateProfile } from "@/lib/hooks/useEmployee";
-import { formatCurrency, initials } from "@/lib/format";
+import { useMyPayroll, useMyProfile, useUpdateProfile, useUploadAvatar } from "@/lib/hooks/useEmployee";
+import { formatCurrency, initials, avatarUrl } from "@/lib/format";
 
 const schema = z.object({
   firstName: z.string().min(1, "Required"),
@@ -32,6 +32,9 @@ type FormValues = z.infer<typeof schema>;
 export default function EmployeeProfilePage() {
   const { data, isLoading } = useMyProfile();
   const { mutate, isPending, error, isSuccess } = useUpdateProfile();
+  const { mutateAsync: uploadAvatar, isPending: uploading, error: uploadError } = useUploadAvatar();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarSrc, setAvatarSrc] = useState<string | undefined>();
   const currentMonth = new Date().toISOString().slice(0, 7);
   const { data: payroll = [], isLoading: payrollLoading } = useMyPayroll(currentMonth);
   const profile = data?.profile;
@@ -52,10 +55,26 @@ export default function EmployeeProfilePage() {
         department: profile.department ?? "",
         designation: profile.designation ?? "",
       });
+      setAvatarSrc(avatarUrl(profile.avatarUrl));
     }
   }, [profile, reset]);
 
   const onSubmit = (values: FormValues) => mutate(values);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      await uploadAvatar(file);
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+      const url = URL.createObjectURL(file);
+      setAvatarSrc(`${baseUrl}/uploads/avatars/${file.name}`);
+      URL.revokeObjectURL(url);
+    } catch {
+      // error handled by uploadError state
+    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
 
   const field = (id: keyof FormValues, label: string, placeholder = "") => (
     <div className="space-y-1">
@@ -72,16 +91,53 @@ export default function EmployeeProfilePage() {
       <SectionCard title="Profile Summary">
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="flex flex-col items-center gap-4 rounded-lg border bg-slate-50 p-5">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={profile?.avatarUrl ?? ""} />
-              <AvatarFallback className="text-2xl">
-                {isLoading ? (
-                  <UserCircle className="h-10 w-10" />
-                ) : (
-                  initials(profile?.firstName, profile?.lastName)
-                )}
-              </AvatarFallback>
-            </Avatar>
+            <div className="group relative">
+              <Avatar className="h-24 w-24 ring-2 ring-slate-200">
+                <AvatarImage src={avatarSrc ?? ""} />
+                <AvatarFallback className="text-2xl">
+                  {isLoading ? (
+                    <UserCircle className="h-10 w-10" />
+                  ) : (
+                    initials(profile?.firstName, profile?.lastName)
+                  )}
+                </AvatarFallback>
+              </Avatar>
+              {!isLoading && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="absolute inset-0 flex h-24 w-24 items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 disabled:cursor-not-allowed"
+                >
+                  {uploading ? (
+                    <Loader2 className="h-6 w-6 animate-spin text-white" />
+                  ) : (
+                    <Camera className="h-6 w-6 text-white" />
+                  )}
+                </button>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </div>
+
+            {uploadError && (
+              <p className="text-xs text-red-500">Failed to upload image</p>
+            )}
+            {!isLoading && (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="text-xs font-medium text-blue-600 hover:text-blue-800 disabled:opacity-50"
+              >
+                {uploading ? "Uploading…" : "Change Photo"}
+              </button>
+            )}
 
             {isLoading ? (
               <Skeleton className="h-5 w-40" />

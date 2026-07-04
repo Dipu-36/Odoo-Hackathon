@@ -50,6 +50,8 @@ services:
       APP_NAME: "HRMS"
     ports:
       - "3001:3001"
+    volumes:
+      - uploads:/app/uploads
 
   frontend:
     build:
@@ -67,3 +69,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:

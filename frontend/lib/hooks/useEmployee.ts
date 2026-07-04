@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getMyProfile, updateMyProfile } from "@/lib/api/profiles";
+import { getMyProfile, updateMyProfile, uploadAvatar } from "@/lib/api/profiles";
 import { getAttendance, checkIn, checkOut } from "@/lib/api/attendance";
 import { getLeaveRequests, createLeaveRequest } from "@/lib/api/leave";
 import { getMyPayroll } from "@/lib/api/payroll";
@@ -22,6 +22,17 @@ export function useUpdateProfile() {
     mutationFn: (data: UpdateProfileData) => updateMyProfile(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["profile", "me"] });
+    },
+  });
+}
+
+export function useUploadAvatar() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => uploadAvatar(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["profile", "me"] });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
 }

@@ -32,7 +32,7 @@ import {
   useApproveLeave,
   usePayrolls,
 } from "@/lib/hooks/useAdmin";
-import { formatDate, formatCurrency, initials } from "@/lib/format";
+import { formatDate, formatCurrency, initials, avatarUrl } from "@/lib/format";
 import type { UserWithProfile } from "@/types";
 
 export default function AdminDashboardPage() {
@@ -150,7 +150,7 @@ export default function AdminDashboardPage() {
                 >
                   <div className="mb-3 flex items-start justify-between">
                     <Avatar className="h-11 w-11">
-                      {emp.profile?.avatarUrl && <AvatarImage src={emp.profile.avatarUrl} />}
+                      {emp.profile?.avatarUrl && <AvatarImage src={avatarUrl(emp.profile.avatarUrl)} />}
                       <AvatarFallback>
                         {initials(emp.profile?.firstName, emp.profile?.lastName)}
                       </AvatarFallback>
@@ -334,7 +334,7 @@ export default function AdminDashboardPage() {
                     <div className="flex items-center gap-3">
                       <Avatar className="h-8 w-8">
                         {employee?.profile?.avatarUrl && (
-                          <AvatarImage src={employee.profile.avatarUrl} />
+                          <AvatarImage src={avatarUrl(employee.profile.avatarUrl)} />
                         )}
                         <AvatarFallback>
                           {initials(
@@ -507,7 +507,7 @@ export default function AdminDashboardPage() {
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
                       {emp.profile?.avatarUrl && (
-                        <AvatarImage src={emp.profile.avatarUrl} />
+                        <AvatarImage src={avatarUrl(emp.profile.avatarUrl)} />
                       )}
                       <AvatarFallback>
                         {initials(
@@ -600,7 +600,7 @@ export default function AdminDashboardPage() {
               <div className="flex items-center gap-3">
                 <Avatar className="h-12 w-12">
                   {selectedEmployee.profile?.avatarUrl && (
-                    <AvatarImage src={selectedEmployee.profile.avatarUrl} />
+                    <AvatarImage src={avatarUrl(selectedEmployee.profile.avatarUrl)} />
                   )}
                   <AvatarFallback>
                     {initials(

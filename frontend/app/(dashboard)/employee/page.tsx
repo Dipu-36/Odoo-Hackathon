@@ -16,7 +16,7 @@ import {
   useCheckOut,
   useTodayAttendance,
 } from "@/lib/hooks/useEmployee";
-import { formatDate, formatDateTime, formatCurrency, initials } from "@/lib/format";
+import { formatDate, formatDateTime, formatCurrency, initials, avatarUrl } from "@/lib/format";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function EmployeeDashboardPage() {
@@ -47,7 +47,7 @@ export default function EmployeeDashboardPage() {
       {/* Header */}
       <div className="flex items-center gap-4">
         <Avatar className="h-14 w-14">
-          <AvatarImage src={profile?.avatarUrl ?? ""} />
+          <AvatarImage src={avatarUrl(profile?.avatarUrl)} />
           <AvatarFallback className="text-lg">
             {initials(profile?.firstName, profile?.lastName)}
           </AvatarFallback>
