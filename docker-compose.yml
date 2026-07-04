@@ -17,6 +17,14 @@ services:
       timeout: 5s
       retries: 5
 
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: hrms_mail
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
   backend:
     build:
       context: ./backend
@@ -26,6 +34,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     environment:
       DATABASE_URL: "postgresql://postgres:password@postgres:5432/hrms_db"
       JWT_SECRET: "hrms_dev_secret_key_2026"
@@ -34,6 +44,10 @@ services:
       JWT_REFRESH_EXPIRES_IN: "7d"
       FRONTEND_URL: "http://localhost:3000"
       PORT: "3001"
+      SMTP_HOST: "mailpit"
+      SMTP_PORT: "1025"
+      SMTP_FROM: "noreply@hrms.com"
+      APP_NAME: "HRMS"
     ports:
       - "3001:3001"
 

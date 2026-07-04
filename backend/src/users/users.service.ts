@@ -9,6 +9,12 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
+  async findByVerifyToken(token: string) {
+    return this.prisma.user.findFirst({
+      where: { verifyToken: token },
+    });
+  }
+
   async findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
@@ -30,8 +36,31 @@ export class UsersService {
     password: string;
     role: 'ADMIN' | 'HR' | 'EMPLOYEE';
     isVerified?: boolean;
+    verifyToken?: string;
+    verifyTokenExpires?: Date;
   }) {
     return this.prisma.user.create({ data });
+  }
+
+  async markVerified(id: string) {
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        isVerified: true,
+        verifyToken: null,
+        verifyTokenExpires: null,
+      },
+    });
+  }
+
+  async setVerifyToken(id: string, token: string, expires: Date) {
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        verifyToken: token,
+        verifyTokenExpires: expires,
+      },
+    });
   }
 
   async findAll() {

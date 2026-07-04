@@ -33,6 +33,9 @@ export async function getMe(): Promise<User> {
 export const verifyAccount = (token: string) =>
   api.get<{ message: string }>("/auth/verify", { params: { token } }).then((r) => r.data);
 
+export const resendVerification = (email: string) =>
+  api.post<{ message: string }>("/auth/resend-verification", { email }).then((r) => r.data);
+
 // ─── Convenience aliases used by inline page implementations ─────────────────
 export const login = loginUser;
 export const register = registerUser;
