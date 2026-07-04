@@ -1,4 +1,13 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
@@ -11,9 +20,17 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @ApiOperation({ summary: 'Register a new user' })
+  @ApiOperation({ summary: 'Create a new user – admin only' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
   @Post('register')
-  register(@Body() dto: RegisterDto) {
+  register(
+    @Body() dto: RegisterDto,
+    @CurrentUser() admin: { role: string },
+  ) {
+    if (admin.role !== 'ADMIN' && admin.role !== 'HR') {
+      throw new ForbiddenException('Only admins can create new user accounts');
+    }
     return this.authService.register(dto);
   }
 
@@ -32,3 +49,4 @@ export class AuthController {
     return this.authService.getProfile(user.id);
   }
 }
+

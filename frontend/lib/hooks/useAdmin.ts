@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getUsers } from "@/lib/api/users";
+import { registerUser } from "@/lib/api/auth";
 import { getLeaveRequests, updateLeaveRequest } from "@/lib/api/leave";
 import { getAttendance } from "@/lib/api/attendance";
 import {
@@ -125,5 +126,16 @@ export function useEmployees() {
   return useQuery({
     queryKey: ["users"],
     queryFn: getUsers,
+  });
+}
+
+export function useCreateEmployee() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { employeeId: string; email: string; password: string; role: "ADMIN" | "EMPLOYEE" }) =>
+      registerUser(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
   });
 }

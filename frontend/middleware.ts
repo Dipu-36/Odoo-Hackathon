@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/signup", "/verify"];
+const PUBLIC_PATHS = ["/login", "/verify"];
 
 function decodeToken(token: string): { role?: string } | null {
   try {

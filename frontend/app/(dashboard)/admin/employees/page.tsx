@@ -1,8 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
-import { useEmployees } from "@/lib/hooks/useAdmin";
+import { Search, UserPlus } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useEmployees, useCreateEmployee } from "@/lib/hooks/useAdmin";
 import {
   Table,
   TableBody,
@@ -13,6 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,6 +24,7 @@ import {
   Dialog,
   DialogClose,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -27,10 +32,30 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { initials, formatDate } from "@/lib/format";
 import type { UserWithProfile } from "@/types";
 
+const createSchema = z.object({
+  employeeId: z.string().min(1, "Required"),
+  email: z.string().email("Valid email required"),
+  password: z.string().min(8, "Min 8 characters"),
+  role: z.enum(["ADMIN", "EMPLOYEE"]),
+});
+type CreateFormValues = z.infer<typeof createSchema>;
+
 export default function AdminEmployeesPage() {
   const { data: employees = [], isLoading } = useEmployees();
+  const createEmployee = useCreateEmployee();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<UserWithProfile | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<CreateFormValues>({
+    resolver: zodResolver(createSchema),
+    defaultValues: { role: "EMPLOYEE" },
+  });
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -56,6 +81,9 @@ export default function AdminEmployeesPage() {
           <h1 className="text-2xl font-bold text-slate-900">Employees</h1>
           <p className="text-slate-500">Manage and view all employee records.</p>
         </div>
+        <Button onClick={() => { reset(); setCreateOpen(true); }} className="gap-2">
+          <UserPlus className="h-4 w-4" /> Add Employee
+        </Button>
       </div>
 
       <div className="relative max-w-md">
@@ -139,6 +167,71 @@ export default function AdminEmployeesPage() {
         </Table>
       </div>
 
+      {/* ── Create Employee Dialog ───────────────────────────────────── */}
+      <Dialog open={createOpen} onOpenChange={(v) => { setCreateOpen(v); if (!v) reset(); }}>
+        <DialogHeader>
+          <DialogTitle>Add New Employee</DialogTitle>
+          <DialogDescription>Create a login account for the new employee.</DialogDescription>
+          <DialogClose onClick={() => { setCreateOpen(false); reset(); }} />
+        </DialogHeader>
+
+        <form
+          onSubmit={handleSubmit((values) =>
+            createEmployee.mutate(values, {
+              onSuccess: () => { setCreateOpen(false); reset(); },
+            })
+          )}
+          className="space-y-4"
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label htmlFor="ce-empid">Employee ID</Label>
+              <Input id="ce-empid" placeholder="EMP-010" {...register("employeeId")} />
+              {errors.employeeId && <p className="text-xs text-red-500">{errors.employeeId.message}</p>}
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="ce-role">Role</Label>
+              <select
+                id="ce-role"
+                {...register("role")}
+                className="w-full rounded-md border border-input bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              >
+                <option value="EMPLOYEE">Employee</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="ce-email">Email</Label>
+            <Input id="ce-email" type="email" placeholder="employee@company.com" {...register("email")} />
+            {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
+          </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="ce-password">Initial Password</Label>
+            <Input id="ce-password" type="password" placeholder="Min. 8 characters" {...register("password")} />
+            {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
+          </div>
+
+          {createEmployee.error && (
+            <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-600">
+              {(createEmployee.error as any)?.response?.data?.message ?? "Failed to create employee."}
+            </p>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => { setCreateOpen(false); reset(); }}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={createEmployee.isPending}>
+              {createEmployee.isPending ? "Creating…" : "Create Employee"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </Dialog>
+
+      {/* ── View Employee Dialog ─────────────────────────────────────── */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         {selected && (
           <>
