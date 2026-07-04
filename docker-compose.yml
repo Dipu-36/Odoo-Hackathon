@@ -1,5 +1,4 @@
 services:
-
   postgres:
     image: postgres:16-alpine
     container_name: hrms_db
@@ -22,46 +21,30 @@ services:
       timeout: 5s
       retries: 10
 
-
   backend:
     build:
       context: .
       dockerfile: Dockerfile
-      target: backend
 
     container_name: hrms_backend
 
-    env_file:
-      - ./backend/.env
-
     restart: unless-stopped
+
+    ports:
+      - "3000:3000"
+
+    env_file:
+      - .env
 
     depends_on:
       postgres:
         condition: service_healthy
 
-    ports:
-      - "3000:3000"
-
-
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: frontend
-
-    container_name: hrms_frontend
-
-    restart: unless-stopped
-
-    env_file:
-      - ./frontend/.env
-
-    depends_on:
-      - backend
-
-    ports:
-      - "3001:3000"
+    command: >
+      sh -c "
+      npx prisma migrate deploy &&
+      node dist/main
+      "
 
 volumes:
   pgdata:
