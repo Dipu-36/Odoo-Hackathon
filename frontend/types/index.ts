@@ -42,6 +42,7 @@ export interface LeaveRequest {
   from: string;
   to: string;
   remarks?: string;
+  attachment?: string;
   status: LeaveStatus;
   createdAt: string;
 }

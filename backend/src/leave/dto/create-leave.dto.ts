@@ -25,4 +25,9 @@ export class CreateLeaveDto {
   @IsString()
   @IsOptional()
   remarks?: string;
+
+  @ApiProperty({ required: false, example: 'medical_certificate.pdf' })
+  @IsString()
+  @IsOptional()
+  attachment?: string;
 }

@@ -22,9 +22,15 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 export class LeaveController {
   constructor(private readonly leaveService: LeaveService) {}
 
-  @ApiOperation({ summary: 'Get leave requests' })
+  @ApiOperation({ summary: 'Get leave requests (admins see all, employees see own)' })
   @Get()
-  findAll(@Query() query: LeaveQuery) {
+  findAll(
+    @CurrentUser() user: { id: string; role: string },
+    @Query() query: LeaveQuery,
+  ) {
+    if (user.role !== 'ADMIN' && user.role !== 'HR') {
+      return this.leaveService.findAll({ ...query, userId: user.id });
+    }
     return this.leaveService.findAll(query);
   }
 

@@ -11,6 +11,7 @@ export interface CreateLeaveData {
   from: string;
   to: string;
   remarks?: string;
+  attachment?: string;
 }
 
 export const getLeaveRequests = (params?: LeaveParams) =>

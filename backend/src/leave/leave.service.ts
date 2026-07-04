@@ -32,6 +32,7 @@ export class LeaveService {
         from: new Date(dto.from),
         to: new Date(dto.to),
         remarks: dto.remarks,
+        attachment: dto.attachment,
       },
     });
   }
