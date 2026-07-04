@@ -3,17 +3,17 @@ import type { Payroll, PayrollUpdate } from "@/types";
 
 export const getMyPayroll = (month?: string) =>
   api
-    .get<Payroll[]>("/api/payroll/me", { params: { month } })
+    .get<Payroll[]>("/payroll/me", { params: { month } })
     .then((res) => res.data);
 
 export const getPayrolls = (month?: string) =>
   api
-    .get<Payroll[]>("/api/payroll", { params: { month } })
+    .get<Payroll[]>("/payroll", { params: { month } })
     .then((res) => res.data);
 
 export const getEmployeePayroll = (employeeId: string, month?: string) =>
   api
-    .get<Payroll[]>(`/api/payroll/${employeeId}`, { params: { month } })
+    .get<Payroll[]>(`/payroll/${employeeId}`, { params: { month } })
     .then((res) => res.data);
 
 export const updateEmployeePayroll = (
@@ -21,5 +21,5 @@ export const updateEmployeePayroll = (
   data: PayrollUpdate
 ) =>
   api
-    .patch<Payroll>(`/api/payroll/${employeeId}`, data)
+    .patch<Payroll>(`/payroll/${employeeId}`, data)
     .then((res) => res.data);

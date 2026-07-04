@@ -1,6 +1,11 @@
-// TODO: implement payroll module
-// Routes: GET /payroll/me, GET /payroll/:employeeId, PATCH /payroll/:employeeId
-import { Module } from "@nestjs/common";
+import { Module } from '@nestjs/common';
+import { PayrollService } from './payroll.service';
+import { PayrollController } from './payroll.controller';
+import { AuthModule } from '../auth/auth.module';
 
-@Module({})
+@Module({
+  imports: [AuthModule],
+  providers: [PayrollService],
+  controllers: [PayrollController],
+})
 export class PayrollModule {}

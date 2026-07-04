@@ -11,7 +11,7 @@ export type UpdateProfileData = Partial<
 >;
 
 export const getMyProfile = () =>
-  api.get<MyProfileResponse>("/api/profiles/me").then((res) => res.data);
+  api.get<MyProfileResponse>("/profiles/me").then((res) => res.data);
 
 export const updateMyProfile = (data: UpdateProfileData) =>
-  api.patch<MyProfileResponse>("/api/profiles/me", data).then((res) => res.data);
+  api.patch<MyProfileResponse>("/profiles/me", data).then((res) => res.data);

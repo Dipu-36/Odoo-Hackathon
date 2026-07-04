@@ -19,6 +19,7 @@ export class UsersService {
         role: true,
         isVerified: true,
         createdAt: true,
+        profile: true,
       },
     });
   }
@@ -42,6 +43,7 @@ export class UsersService {
         role: true,
         isVerified: true,
         createdAt: true,
+        profile: true,
       },
     });
   }

@@ -86,6 +86,7 @@ model LeaveRequest {
   to        DateTime    @db.Date
   remarks   String?
   status    LeaveStatus @default(PENDING)
+  comments  String?
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
 

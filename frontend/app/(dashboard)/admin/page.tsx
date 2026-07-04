@@ -1,37 +1,78 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
+import { format } from "date-fns";
 import {
   Users,
   Clock,
   CheckCircle2,
   CalendarClock,
   ArrowRight,
+  Building2,
+  Wallet,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { SectionCard } from "@/components/dashboard/SectionCard";
-import { LeaveStatusBadge } from "@/components/leave/LeaveStatusBadge";
+import { AttendanceStatusBadge } from "@/components/attendance/AttendanceStatusBadge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAdminStats, useApproveLeave } from "@/lib/hooks/useAdmin";
-import { formatDate } from "@/lib/format";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  useAdminStats,
+  useApproveLeave,
+  usePayrolls,
+} from "@/lib/hooks/useAdmin";
+import { formatDate, formatCurrency, initials } from "@/lib/format";
+import type { UserWithProfile } from "@/types";
 
 export default function AdminDashboardPage() {
   const { counts, employees, leaves, attendance, isLoading } = useAdminStats();
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const { data: payrolls = [], isLoading: payrollLoading } =
+    usePayrolls(currentMonth);
   const approveLeave = useApproveLeave();
 
   const pendingLeaves = leaves.filter((l) => l.status === "PENDING").slice(0, 5);
   const recentEmployees = employees.slice(0, 5);
 
+  const employeeMap = useMemo(() => {
+    const map = new Map<string, UserWithProfile>();
+    employees.forEach((e) => map.set(e.id, e));
+    return map;
+  }, [employees]);
+
+  const departments = useMemo(() => {
+    const deptCounts: Record<string, number> = {};
+    employees.forEach((emp) => {
+      const dept = emp.profile?.department ?? "Unassigned";
+      deptCounts[dept] = (deptCounts[dept] ?? 0) + 1;
+    });
+    return Object.entries(deptCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6);
+  }, [employees]);
+
+  const payrollSummary = useMemo(() => {
+    const totalNet = payrolls.reduce((sum, p) => sum + p.netSalary, 0);
+    return { totalNet, count: payrolls.length };
+  }, [payrolls]);
+
   const handleLeaveAction = (id: string, status: "APPROVED" | "REJECTED") => {
     approveLeave.mutate({ id, data: { status } });
   };
+
+  const todayLabel = format(new Date(), "EEEE, MMMM d, yyyy");
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
-        <p className="text-slate-500">Overview of employees, attendance, leave, and payroll.</p>
+        <p className="text-slate-500">
+          {todayLabel} &middot; Overview of employees, attendance, leave, and
+          payroll.
+        </p>
       </div>
 
       {isLoading ? (
@@ -47,24 +88,28 @@ export default function AdminDashboardPage() {
             value={counts.employees}
             icon={Users}
             subtitle="Registered workforce"
+            accent="blue"
           />
           <StatCard
             title="Pending Leaves"
             value={counts.pendingLeaves}
             icon={Clock}
             subtitle="Awaiting approval"
+            accent="amber"
           />
           <StatCard
             title="Approved Leaves"
             value={counts.approvedLeaves}
             icon={CheckCircle2}
             subtitle="This cycle"
+            accent="emerald"
           />
           <StatCard
             title="Checked-in Today"
             value={counts.checkedInToday}
             icon={CalendarClock}
             subtitle={`Out of ${counts.employees} employees`}
+            accent="violet"
           />
         </div>
       )}
@@ -92,41 +137,47 @@ export default function AdminDashboardPage() {
             </p>
           ) : (
             <div className="divide-y divide-slate-100">
-              {pendingLeaves.map((leave) => (
-                <div
-                  key={leave.id}
-                  className="flex items-center justify-between py-3"
-                >
-                  <div>
-                    <p className="font-medium text-slate-900">
-                      {leave.type.replace("_", " ")}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {formatDate(leave.from)} – {formatDate(leave.to)}
-                    </p>
-                    {leave.remarks && (
-                      <p className="text-xs text-slate-400">{leave.remarks}</p>
-                    )}
+              {pendingLeaves.map((leave) => {
+                const employee = employeeMap.get(leave.userId);
+                return (
+                  <div
+                    key={leave.id}
+                    className="flex items-center justify-between py-3"
+                  >
+                    <div>
+                      <p className="font-medium text-slate-900">
+                        {employee?.profile
+                          ? `${employee.profile.firstName} ${employee.profile.lastName}`
+                          : employee?.employeeId ?? "Unknown"}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {leave.type.replace("_", " ")} &middot;{" "}
+                        {formatDate(leave.from)} &ndash; {formatDate(leave.to)}
+                      </p>
+                      {leave.remarks && (
+                        <p className="text-xs text-slate-400">{leave.remarks}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleLeaveAction(leave.id, "APPROVED")}
+                        disabled={approveLeave.isPending}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleLeaveAction(leave.id, "REJECTED")}
+                        disabled={approveLeave.isPending}
+                      >
+                        Reject
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => handleLeaveAction(leave.id, "APPROVED")}
-                      disabled={approveLeave.isPending}
-                    >
-                      Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleLeaveAction(leave.id, "REJECTED")}
-                      disabled={approveLeave.isPending}
-                    >
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </SectionCard>
@@ -153,24 +204,153 @@ export default function AdminDashboardPage() {
             </p>
           ) : (
             <div className="divide-y divide-slate-100">
-              {attendance.slice(0, 6).map((record) => (
-                <div
-                  key={record.id}
-                  className="flex items-center justify-between py-3"
-                >
-                  <div>
-                    <p className="font-medium text-slate-900">
-                      {record.userId}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {formatDate(record.date)}
-                    </p>
+              {attendance.slice(0, 6).map((record) => {
+                const employee = employeeMap.get(record.userId);
+                return (
+                  <div
+                    key={record.id}
+                    className="flex items-center justify-between py-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        {employee?.profile?.avatarUrl && (
+                          <AvatarImage src={employee.profile.avatarUrl} />
+                        )}
+                        <AvatarFallback>
+                          {initials(
+                            employee?.profile?.firstName,
+                            employee?.profile?.lastName
+                          )}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium text-slate-900">
+                          {employee?.profile
+                            ? `${employee.profile.firstName} ${employee.profile.lastName}`
+                            : employee?.employeeId ?? record.userId}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {employee?.profile?.designation ?? "—"}
+                        </p>
+                      </div>
+                    </div>
+                    <AttendanceStatusBadge
+                      checkIn={record.checkIn}
+                      checkOut={record.checkOut}
+                    />
                   </div>
-                  <LeaveStatusBadge
-                    status={record.checkOut ? "APPROVED" : "PENDING"}
-                  />
+                );
+              })}
+            </div>
+          )}
+        </SectionCard>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <SectionCard
+          title="Department Overview"
+          action={
+            <Link href="/admin/employees">
+              <Button variant="ghost" size="sm" className="gap-1">
+                Manage <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          }
+        >
+          {isLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : departments.length === 0 ? (
+            <p className="py-6 text-center text-sm text-slate-500">
+              No department data available.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {departments.map(([dept, count]) => {
+                const pct = Math.round((count / employees.length) * 100);
+                return (
+                  <div key={dept}>
+                    <div className="mb-1 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-slate-400" />
+                        <span className="text-sm font-medium text-slate-700">
+                          {dept}
+                        </span>
+                      </div>
+                      <Badge variant="secondary">{count}</Badge>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                      <div
+                        className="h-full rounded-full bg-slate-900"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </SectionCard>
+
+        <SectionCard
+          title="Payroll Summary"
+          action={
+            <Link href="/admin/payroll">
+              <Button variant="ghost" size="sm" className="gap-1">
+                Manage <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          }
+        >
+          {isLoading || payrollLoading ? (
+            <div className="space-y-3">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 rounded-lg bg-slate-50 p-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-violet-50">
+                  <Wallet className="h-6 w-6 text-violet-600" />
                 </div>
-              ))}
+                <div>
+                  <p className="text-sm text-slate-500">
+                    Total payroll &middot; {format(new Date(), "MMMM yyyy")}
+                  </p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {formatCurrency(payrollSummary.totalNet)}
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <p className="text-xs text-slate-500">Salaries configured</p>
+                  <p className="text-lg font-semibold text-slate-900">
+                    {payrollSummary.count}
+                    <span className="text-sm font-normal text-slate-400">
+                      {" "}
+                      / {counts.employees}
+                    </span>
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 p-3">
+                  <p className="text-xs text-slate-500">Pending setup</p>
+                  <p className="text-lg font-semibold text-slate-900">
+                    {counts.employees - payrollSummary.count}
+                  </p>
+                </div>
+              </div>
+              {counts.employees - payrollSummary.count > 0 && (
+                <Link href="/admin/payroll">
+                  <Button variant="outline" className="w-full">
+                    Configure remaining salaries
+                  </Button>
+                </Link>
+              )}
             </div>
           )}
         </SectionCard>
@@ -204,16 +384,31 @@ export default function AdminDashboardPage() {
                   key={emp.id}
                   className="flex items-center justify-between py-3"
                 >
-                  <div>
-                    <p className="font-medium text-slate-900">
-                      {emp.profile
-                        ? `${emp.profile.firstName} ${emp.profile.lastName}`
-                        : emp.email}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {emp.employeeId} • {emp.profile?.designation ?? "—"}
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-8 w-8">
+                      {emp.profile?.avatarUrl && (
+                        <AvatarImage src={emp.profile.avatarUrl} />
+                      )}
+                      <AvatarFallback>
+                        {initials(
+                          emp.profile?.firstName,
+                          emp.profile?.lastName
+                        )}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium text-slate-900">
+                        {emp.profile
+                          ? `${emp.profile.firstName} ${emp.profile.lastName}`
+                          : emp.email}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {emp.employeeId} &middot;{" "}
+                        {emp.profile?.designation ?? "—"}
+                      </p>
+                    </div>
                   </div>
+                  <Badge variant="secondary">{emp.role}</Badge>
                 </div>
               ))}
             </div>
@@ -257,7 +452,7 @@ export default function AdminDashboardPage() {
             </Link>
             <Link href="/admin/payroll">
               <Button variant="outline" className="h-auto w-full justify-start p-4">
-                <CheckCircle2 className="mr-3 h-5 w-5 text-slate-500" />
+                <Wallet className="mr-3 h-5 w-5 text-slate-500" />
                 <div className="text-left">
                   <p className="font-medium">Payroll</p>
                   <p className="text-xs font-normal text-slate-500">

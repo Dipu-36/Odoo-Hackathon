@@ -1,6 +1,11 @@
-// TODO: implement profiles module
-// Routes: GET /profiles/me, PATCH /profiles/me
-import { Module } from "@nestjs/common";
+import { Module } from '@nestjs/common';
+import { ProfilesService } from './profiles.service';
+import { ProfilesController } from './profiles.controller';
+import { AuthModule } from '../auth/auth.module';
 
-@Module({})
+@Module({
+  imports: [AuthModule],
+  providers: [ProfilesService],
+  controllers: [ProfilesController],
+})
 export class ProfilesModule {}

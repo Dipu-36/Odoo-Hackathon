@@ -14,10 +14,10 @@ export interface CreateLeaveData {
 }
 
 export const getLeaveRequests = (params?: LeaveParams) =>
-  api.get<LeaveRequest[]>("/api/leave", { params }).then((res) => res.data);
+  api.get<LeaveRequest[]>("/leave", { params }).then((res) => res.data);
 
 export const createLeaveRequest = (data: CreateLeaveData) =>
-  api.post<LeaveRequest>("/api/leave", data).then((res) => res.data);
+  api.post<LeaveRequest>("/leave", data).then((res) => res.data);
 
 export const updateLeaveRequest = (id: string, data: LeaveAction) =>
-  api.patch<LeaveRequest>(`/api/leave/${id}`, data).then((res) => res.data);
+  api.patch<LeaveRequest>(`/leave/${id}`, data).then((res) => res.data);

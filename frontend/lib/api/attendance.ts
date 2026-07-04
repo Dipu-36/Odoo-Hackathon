@@ -8,10 +8,10 @@ export interface AttendanceParams {
 }
 
 export const getAttendance = (params?: AttendanceParams) =>
-  api.get<AttendanceRecord[]>("/api/attendance", { params }).then((res) => res.data);
+  api.get<AttendanceRecord[]>("/attendance", { params }).then((res) => res.data);
 
 export const checkIn = () =>
-  api.post<AttendanceRecord>("/api/attendance/check-in").then((res) => res.data);
+  api.post<AttendanceRecord>("/attendance/check-in").then((res) => res.data);
 
 export const checkOut = () =>
-  api.post<AttendanceRecord>("/api/attendance/check-out").then((res) => res.data);
+  api.post<AttendanceRecord>("/attendance/check-out").then((res) => res.data);
