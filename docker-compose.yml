@@ -3,14 +3,48 @@ services:
     image: postgres:16-alpine
     container_name: hrms_db
     restart: unless-stopped
+
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: hrms_db
+
     ports:
       - "5435:5432"
+
     volumes:
       - pgdata:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d hrms_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: hrms_backend
+
+    restart: unless-stopped
+
+    ports:
+      - "3000:3000"
+
+    env_file:
+      - .env
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    command: >
+      sh -c "
+      npx prisma migrate deploy &&
+      node dist/main
+      "
 
 volumes:
   pgdata:
