@@ -12,7 +12,7 @@ const schema = z
     email: z.string().email("Enter a valid email"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string(),
-    role: z.enum(["ADMIN", "HR", "EMPLOYEE"]),
+    role: z.enum(["ADMIN", "EMPLOYEE"]),
   })
   .refine((d) => d.password === d.confirmPassword, {
     message: "Passwords do not match",
@@ -78,7 +78,6 @@ export function SignupForm() {
             className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
           >
             <option value="EMPLOYEE">Employee</option>
-            <option value="HR">HR</option>
             <option value="ADMIN">Admin</option>
           </select>
           {errors.role && (

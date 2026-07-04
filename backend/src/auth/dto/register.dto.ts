@@ -3,7 +3,6 @@ import { ApiProperty } from '@nestjs/swagger';
 
 enum Role {
   ADMIN = 'ADMIN',
-  HR = 'HR',
   EMPLOYEE = 'EMPLOYEE',
 }
 
@@ -22,6 +21,6 @@ export class RegisterDto {
   password: string;
 
   @ApiProperty({ enum: Role, example: Role.EMPLOYEE })
-  @IsEnum(Role, { message: 'Role must be ADMIN, HR, or EMPLOYEE' })
+  @IsEnum(Role, { message: 'Role must be ADMIN or EMPLOYEE' })
   role: Role;
 }
