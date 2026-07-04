@@ -18,6 +18,8 @@ out/
 # Prisma – migrations MUST be committed (schema history)
 # backend/prisma/migrations/ ← do NOT ignore
 
+images/
+
 # Logs
 logs/
 *.log
